@@ -1,0 +1,3645 @@
+package com.cgi.dubai.tabs;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URLEncoder;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+import android.annotation.SuppressLint;
+import android.app.ActionBar;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.DatePickerDialog;
+import android.app.Dialog;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.inputmethod.InputMethodManager;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.DatePicker;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.cgi.dubai.ConnectionDetector;
+import com.cgi.dubai.R;
+import com.cgi.dubai.Adapters.FirstLevel_CustomAdapter;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.MapsInitializer;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+
+public class MainActivity extends AppCompatActivity {
+	ImageButton mLevelABtn, mLevelBBtn, mLevelCBtn;
+	ViewGroup mLevelAView, mLevelBView, mLevelCView, rl;
+	LinearLayout ll;
+	EditText editname, editdob, editnationality, editpassportnum, editemail;
+	EditText gr_editname, gr_editmoblenumber, gr_text, gr_editpassportnum,
+			gr_editemail, gr_editcapche;
+	Random random = new Random();
+	private static final String _CHAR = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
+	private static final int RANDOM_STR_LENGTH = 6;
+
+	boolean emailPattern = false;
+	Dialog dialog;
+
+	private Object validName;
+	TextView gr_selecttext, gr_textcapche;
+	String emailadrss;
+	ImageView subitimage, gr_imageview_refresh;
+	Calendar c;
+	ImageView callsos;
+	RelativeLayout r1;
+	MapView mMapView;
+	private GoogleMap googleMap;
+	HttpResponse response;
+	Registrationasyn Obj_Registrationasyn;
+
+	ConnectionDetector cd;
+	Boolean isInternetPresent = false;
+	InputStream is = null;
+	StringBuilder sb = null;
+
+	ProgressDialog mProgressDialog;
+	String json;
+	String restUrl;
+
+	ActionBar actionBar;
+	MarkerOptions marker;
+	TextView addressTextView, phone1, phone2, email;
+	CameraPosition cameraPosition;
+	ListView mLevelAList, mLevelBList, mLevelCList;
+	String[] ALevelArray = { "Message from Consul General", "Information",
+			"Event Registration", "Passport", "Visa/OCI", "Labour Welfare",
+			"Culture", "Links of GOI", "News Updates", "Contact us",
+			"About this App" };
+
+	String Passport_text[] = { "Renewal", "New Born Registration",
+			"Genuineness Certificate", "Police Clearance Certificate",
+			"Birth Certificate", "Renunciation of Indian Passport",
+			"NRI Certficate", "Tatkal Services", "FAQs" };
+
+	// Visa/oci
+	String VisaOCI[] = { "e-Tourist Visa", "Indian Visa", "OCI", "FAQs" };
+
+	// Labour Welfare
+	String Labour_Welfare[] = { "Overview", "Recruitment", "Community Affairs",
+			"Labour Dispute", "Madad Helpline", "Call Labour Section ",
+			"Death Cases", "Grievance Redressal" };
+	String Labour_welfare_submenu[] = { "Wage Structure", "House Maids",
+			"Individual Workers", "Group of Workers", "eMigrate" };
+
+	// Death Case
+	String Death_Case[] = { "Step 1", "Step 2", "Step 3", "Step 4",
+			"Help Line", "Important Contact No." };
+
+	// Culture
+	String Culture[] = { "Indradhanush", "Manthan", "Utkarsh", "Stree Shakti",
+			"Events" };
+
+	// Financial_Assistance
+	String Link_GOI[] = { "Madad", "Emigrate", "PMO", "Narendra Modi App",
+			"MEA App" };
+	String Recruitment[] = { "Wage Structure", "House Maids",
+			"Individual Workers", "Group of Workers",
+
+			"eMigrate" };
+	String Aboutapp[] = { "Write to us", "Spread the word", "Rate the app" };
+	Integer[] AlevelImagesArray = { R.drawable.ic_msg_co_smalltab,
+			R.drawable.ic_information_smalltab,
+			R.drawable.mregistration_smalltab, R.drawable.ic_passport_smalltab,
+			R.drawable.ic_visa_oci_smalltab, R.drawable.ic_labour_smalltab,
+			R.drawable.ic_death_smalltab, R.drawable.ic_culture_smalltab,
+			R.drawable.ic_link_goi_smalltab,
+			R.drawable.ic_new_updates_smalltab,
+			R.drawable.ic_contactus_smalltab,
+			R.drawable.ic_side_menu_important_smalltab };
+	final CharSequence[] SelectSubject = { "Personal & Family Matters",
+			"Harassment by the Employer", "Property Disputes",
+			"Service Benefits Dispute", "Others" };
+	double latitude = 25.2542171;
+	String[] val = { "Personal & Family Matters", "Harassment by the Employer",
+			"Property Disputes", "Service Benefits Dispute", "Others" };
+	double longitude = 55.3084152;
+	static final int DATE_DIALOG_ID = 0;
+	String dcheck, mcheck, ycheck;
+	private int mYear, mMonth, mDay;
+	TextView menuid, menuidc;
+	ImageView call_iwrc;
+	ImageButton sos;
+	Toolbar toolbar;
+	ImageButton FAB;
+	private PackageInfo pInfo;
+
+	@Override
+	protected void onCreate(final Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.tab);
+		try {
+			pInfo = MainActivity.this.getPackageManager().getPackageInfo(
+					MainActivity.this.getPackageName(), 0);
+		} catch (NameNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		getSupportActionBar().hide();
+		ll = (LinearLayout) findViewById(R.id.linear);
+		r1 = (RelativeLayout) findViewById(R.id.relative);
+		mLevelAView = (ViewGroup) getLayoutInflater().inflate(
+				R.layout.level_a_layout, null);
+		mLevelBView = (ViewGroup) getLayoutInflater().inflate(
+				R.layout.level_b_layout, null);
+		mLevelCView = (ViewGroup) getLayoutInflater().inflate(
+				R.layout.level_c_layout, null);
+		rl = (ViewGroup) getLayoutInflater().inflate(
+				R.layout.message_from_cg_tab, null);
+
+		WebView message_consolate = (WebView) rl
+				.findViewById(R.id.message_of_cg);
+
+		message_consolate.loadUrl("file:///android_asset/cgihtml/welcome.html");
+
+		mLevelBBtn = (ImageButton) mLevelBView
+				.findViewById(R.id.drawer_btn_level_b);
+		mLevelCBtn = (ImageButton) mLevelCView
+				.findViewById(R.id.drawer_btn_level_c);
+
+		// Initialize Buttons
+		mLevelAList = (ListView) mLevelAView.findViewById(R.id.a_level_list);
+		mLevelBList = (ListView) mLevelBView.findViewById(R.id.b_level_list);
+		mLevelCList = (ListView) mLevelCView.findViewById(R.id.c_level_list);
+		menuid = (TextView) mLevelBView.findViewById(R.id.menu);
+		menuidc = (TextView) mLevelCView.findViewById(R.id.menuc);
+
+		ll.addView(mLevelAView);
+		r1.addView(rl);
+
+		final FirstLevel_CustomAdapter First_adapter = new FirstLevel_CustomAdapter(
+				this, ALevelArray, AlevelImagesArray);
+		mLevelAList.setAdapter(First_adapter);
+		mLevelAList.setOnItemClickListener(new OnItemClickListener() {
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, final View view,
+					int position, long id) {
+				Selectitem(position);
+
+				switch (position) {
+
+				case 0:// message_consul_general
+					r1.removeAllViews();
+					rl = (ViewGroup) getLayoutInflater().inflate(
+							R.layout.message_from_cg_tab, null);
+
+					WebView message_consolate = (WebView) rl
+							.findViewById(R.id.message_of_cg);
+					message_consolate
+							.loadUrl("file:///android_asset/cgihtml/welcome.html");
+
+					r1.addView(rl);
+
+					break;
+
+				case 1:// info
+					r1.removeAllViews();
+					getFragmentManager().popBackStack(); // View mapa;
+
+					rl = (ViewGroup) getLayoutInflater().inflate(
+							R.layout.activity_location, null);
+					mMapView = (MapView) rl.findViewById(R.id.map);
+					mMapView.onCreate(savedInstanceState);
+
+					mMapView.onResume();// needed to get the map to display
+										// immediately
+
+					try {
+						MapsInitializer.initialize(getApplicationContext());
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+
+					googleMap = mMapView.getMap();
+					// latitude and longitude
+
+					try {
+
+						// create marker
+						MarkerOptions marker = new MarkerOptions().position(
+								new LatLng(latitude, longitude)).title(
+								"CGI,Dubai");
+
+						// Changing marker icon
+						marker.icon(BitmapDescriptorFactory
+								.defaultMarker(BitmapDescriptorFactory.HUE_ROSE));
+
+						// adding marker
+						googleMap.addMarker(marker);
+						CameraPosition cameraPosition = new CameraPosition.Builder()
+								.target(new LatLng(latitude, longitude))
+								.zoom(18).build();
+						googleMap.animateCamera(CameraUpdateFactory
+								.newCameraPosition(cameraPosition));
+
+					} catch (NullPointerException e) {
+						// TODO: handle exception
+					}
+					WebView info = (WebView) rl.findViewById(R.id.info_webview);
+					info.loadUrl("file:///android_asset/cgihtml/consulate_info.html");
+					sos = (ImageButton) rl.findViewById(R.id.imageButton1);
+					sos.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							call1("009710097180046342");
+						}
+					});
+					r1.addView(rl);
+
+					break;
+				case 2:
+
+					r1.removeAllViews();
+					rl = (ViewGroup) getLayoutInflater().inflate(
+							R.layout.registration_tab, null);
+					editname = (EditText) rl.findViewById(R.id.fullname);
+					editdob = (EditText) rl.findViewById(R.id.dob);
+					editnationality = (EditText) rl
+							.findViewById(R.id.nationality);
+					editpassportnum = (EditText) rl.findViewById(R.id.passport);
+					editemail = (EditText) rl.findViewById(R.id.email);
+
+					subitimage = (ImageView) rl
+							.findViewById(R.id.download_form_button);
+					c = Calendar.getInstance();
+					mYear = c.get(Calendar.YEAR);
+					mMonth = c.get(Calendar.MONTH);
+					mDay = c.get(Calendar.DAY_OF_MONTH);
+					editname.addTextChangedListener(new TextWatcher() {
+
+						@Override
+						public void onTextChanged(CharSequence s, int start,
+								int before, int count) {
+							// TODO Auto-generated method stub
+							Is_Valid_First_Name(editname);
+
+						}
+
+						@Override
+						public void beforeTextChanged(CharSequence s,
+								int start, int count, int after) {
+							// TODO Auto-generated method stub
+
+						}
+
+						@Override
+						public void afterTextChanged(Editable s) {
+							// TODO Auto-generated method stub
+							Is_Valid_First_Name(editname);
+						}
+					});
+
+					editnationality.addTextChangedListener(new TextWatcher() {
+
+						@Override
+						public void onTextChanged(CharSequence s, int start,
+								int before, int count) {
+							// TODO Auto-generated method stub
+							Is_Valid_Middle_Name(editnationality);
+
+						}
+
+						@Override
+						public void beforeTextChanged(CharSequence s,
+								int start, int count, int after) {
+							// TODO Auto-generated method stub
+
+						}
+
+						@Override
+						public void afterTextChanged(Editable s) {
+							// TODO Auto-generated method stub
+							Is_Valid_Middle_Name(editnationality);
+						}
+					});
+
+					editpassportnum.addTextChangedListener(new TextWatcher() {
+
+						@Override
+						public void onTextChanged(CharSequence s, int start,
+								int before, int count) {
+							// TODO Auto-generated method stub
+							Is_Valid_Passport(editpassportnum);
+
+						}
+
+						@Override
+						public void beforeTextChanged(CharSequence s,
+								int start, int count, int after) {
+							// TODO Auto-generated method stub
+
+						}
+
+						@Override
+						public void afterTextChanged(Editable s) {
+							// TODO Auto-generated method stub
+							Is_Valid_Passport(editpassportnum);
+						}
+					});
+					SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+					String asa = sdf.format(c.getTime());
+					dcheck = asa.substring(0, 2);
+
+					mcheck = asa.substring(3, 5);
+
+					ycheck = asa.substring(6);
+
+					editdob.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							showDialog(DATE_DIALOG_ID);
+
+						}
+					});
+					subitimage.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							cd = new ConnectionDetector(getApplicationContext());
+							InputMethodManager imm = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
+							imm.toggleSoftInput(
+									InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+							// get Internet status
+							isInternetPresent = cd.isConnectingToInternet();
+
+							if (isInternetPresent) {
+
+								if (editname.getText().toString().trim()
+										.equals("")
+										|| editdob.getText().toString().trim()
+												.equals("")
+										|| editnationality.getText().toString()
+												.trim().equals("")
+										|| editpassportnum.getText().toString()
+												.trim().equals("")
+										|| editemail.getText().toString()
+												.trim().equals("")) {
+									Toast.makeText(getApplicationContext(),
+											"Please fill all details properly",
+											Toast.LENGTH_SHORT).show();
+
+								} else {
+
+									emailPattern = emailPattern(editemail
+											.getText().toString());
+
+									if (emailPattern) {
+										Obj_Registrationasyn = new Registrationasyn();
+										Obj_Registrationasyn.execute();
+
+									} else {
+										Toast.makeText(getApplicationContext(),
+												"Please Enter Valid Email",
+												Toast.LENGTH_SHORT).show();
+
+									}
+
+								}
+
+							}
+
+							else {
+
+								Toast.makeText(
+										getApplicationContext(),
+										"Please Check Your Internet Connection",
+										Toast.LENGTH_SHORT).show();
+
+							}
+
+						}
+					});
+					sos = (ImageButton) rl.findViewById(R.id.imageButton1);
+					sos.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							call1("009710097180046342");
+						}
+					});
+					r1.addView(rl);
+
+					break;
+				case 3:// passport
+					mLevelAView.setVisibility(View.GONE);
+					mLevelCView.setVisibility(View.GONE);
+					mLevelBView.setVisibility(View.VISIBLE);
+
+					ll.addView(mLevelBView);
+
+					mLevelBList.setAdapter(new ArrayAdapter<String>(
+							MainActivity.this, R.layout.custom_list_inside,
+							Passport_text));
+
+					menuid.setText("Passport");
+
+					r1.removeAllViews();
+					rl = (ViewGroup) getLayoutInflater().inflate(
+							R.layout.passport_renewal_tab, null);
+					WebView renewal = (WebView) rl
+							.findViewById(R.id.renewal_webview);
+
+					ImageView renewalbutton = (ImageView) rl
+							.findViewById(R.id.download_form_button);
+
+					renewal.loadUrl("file:///android_asset/cgihtml/passportsection/renewal.html");
+
+					renewalbutton.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated
+							// method stub
+							Intent passlink = new Intent(MainActivity.this,
+									checktab.class);
+							String url = "http://www.blsindiavisa-uae.com/passport/passport%20forms/eap2.pdf";
+							passlink.putExtra("message", url);
+							startActivity(passlink);
+						}
+					});
+					sos = (ImageButton) rl.findViewById(R.id.imageButton1);
+					sos.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method
+							// stub
+							call1("0097180046342");
+						}
+					});
+					r1.addView(rl);
+					mLevelBList
+							.setOnItemClickListener(new OnItemClickListener() {
+
+								@Override
+								public void onItemClick(AdapterView<?> arg0,
+										View arg1, int Pass_postion, long arg3) {
+
+									switch (Pass_postion) {
+									case 0:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.passport_renewal_tab,
+														null);
+										WebView renewal = (WebView) rl
+												.findViewById(R.id.renewal_webview);
+
+										ImageView renewalbutton = (ImageView) rl
+												.findViewById(R.id.download_form_button);
+
+										renewal.loadUrl("file:///android_asset/cgihtml/passportsection/renewal.html");
+
+										renewalbutton
+												.setOnClickListener(new OnClickListener() {
+
+													@Override
+													public void onClick(View v) {
+														// TODO Auto-generated
+														// method stub
+														Intent passlink = new Intent(
+																MainActivity.this,
+																checktab.class);
+														String url = "http://www.blsindiavisa-uae.com/passport/passport%20forms/eap2.pdf";
+														passlink.putExtra(
+																"message", url);
+														startActivity(passlink);
+													}
+												});
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+										break;
+
+									case 1:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.new_born_registration_tab,
+														null);
+										WebView new_born = (WebView) rl
+												.findViewById(R.id.newborn_webview);
+										ImageView newborn = (ImageView) rl
+												.findViewById(R.id.download_form_button);
+
+										new_born.loadUrl("file:///android_asset/cgihtml/passportsection/new_born_registration.html");
+										newborn.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated
+												// method stub
+
+												Intent passlink = new Intent(
+														MainActivity.this,
+														checktab.class);
+												String url = "http://www.blsindiavisa-uae.com/passport/passport%20forms/eap1.pdf";
+												passlink.putExtra("message",
+														url);
+												startActivity(passlink);
+											}
+										});
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+
+										break;
+
+									case 2:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.genuineness_certificate_tab,
+														null);
+										WebView guideliness_certi = (WebView) rl
+												.findViewById(R.id.genuiness_webview);
+										ImageView genuiness = (ImageView) rl
+												.findViewById(R.id.download_form_button);
+										guideliness_certi
+												.loadUrl("file:///android_asset/cgihtml/passportsection/geniuneness_certificate.html");
+										genuiness
+												.setOnClickListener(new OnClickListener() {
+
+													@Override
+													public void onClick(View v) {
+														// TODO Auto-generated
+														// method stub
+
+														Intent passlink = new Intent(
+																MainActivity.this,
+																checktab.class);
+														String url = "http://www.blsindiavisa-uae.com/passport/passport%20forms/eap2.pdf";
+														passlink.putExtra(
+																"message", url);
+														startActivity(passlink);
+													}
+												});
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+										break;
+
+									case 3:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.police_clearence_certificate_tab,
+														null);
+										WebView police_webview = (WebView) rl
+												.findViewById(R.id.police_webview);
+										ImageView police_clear = (ImageView) rl
+												.findViewById(R.id.download_form_button);
+										police_webview
+												.loadUrl("file:///android_asset/cgihtml/passportsection/police_clearance_certificate.html");
+										police_clear
+												.setOnClickListener(new OnClickListener() {
+
+													@Override
+													public void onClick(View v) {
+														// TODO Auto-generated
+														// method stub
+
+														Intent passlink = new Intent(
+																MainActivity.this,
+																checktab.class);
+														String url = "http://www.blsindiavisa-uae.com/passport/passport%20forms/eap2.pdf";
+														passlink.putExtra(
+																"message", url);
+														startActivity(passlink);
+													}
+												});
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+
+										break;
+
+									case 4:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.birth_certificate_tab,
+														null);
+										ImageView birth_certi = (ImageView) rl
+												.findViewById(R.id.download_form_button);
+										WebView birthcerti_webview = (WebView) rl
+												.findViewById(R.id.birth_certi_webview);
+										birthcerti_webview
+												.loadUrl("file:///android_asset/cgihtml/passportsection/birth_certificate.html");
+										birth_certi
+												.setOnClickListener(new OnClickListener() {
+
+													@Override
+													public void onClick(View v) {
+														// TODO Auto-generated
+														// method stub
+
+														Intent passlink = new Intent(
+																MainActivity.this,
+																checktab.class);
+														String url = "http://www.blsindiavisa-uae.com/passport/passport%20forms/eap2.pdf";
+														passlink.putExtra(
+																"message", url);
+														startActivity(passlink);
+													}
+												});
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+										break;
+
+									case 5:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.renunciation_indian_passport_tab,
+														null);
+										ImageView renunciation = (ImageView) rl
+												.findViewById(R.id.download_form_button);
+										WebView renunciation_web = (WebView) rl
+												.findViewById(R.id.renunciation_webview);
+										renunciation_web
+												.loadUrl("file:///android_asset/cgihtml/passportsection/renunciation_of _indian_passport.html");
+										renunciation
+												.setOnClickListener(new OnClickListener() {
+
+													@Override
+													public void onClick(View v) {
+														// TODO Auto-generated
+														// method stub
+
+														Intent passlink = new Intent(
+																MainActivity.this,
+																checktab.class);
+														String url = "http://www.blsindiavisa-uae.com/passport/passport%20forms/eap2.pdf";
+														passlink.putExtra(
+																"message", url);
+														startActivity(passlink);
+													}
+												});
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+
+										break;
+
+									case 6:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.nri_certificate_tab,
+														null);
+										ImageView nricerti = (ImageView) rl
+												.findViewById(R.id.download_form_button);
+										WebView nri_certi = (WebView) rl
+												.findViewById(R.id.nri_webview);
+										nri_certi
+												.loadUrl("file:///android_asset/cgihtml/passportsection/nri_certificate.html");
+										nricerti.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated
+												// method stub
+
+												Intent passlink = new Intent(
+														MainActivity.this,
+														checktab.class);
+												String url = "http://www.blsindiavisa-uae.com/passport/passport%20forms/eap2.pdf";
+												passlink.putExtra("message",
+														url);
+												startActivity(passlink);
+											}
+										});
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+										break;
+
+									case 7:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.tatkal_services_tab,
+														null);
+										ImageView tatkal = (ImageView) rl
+												.findViewById(R.id.download_form_button);
+										WebView tatkal_web = (WebView) rl
+												.findViewById(R.id.tatkal_webview);
+										tatkal_web
+												.loadUrl("file:///android_asset/cgihtml/passportsection/tatkal_services.html");
+										tatkal.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated
+												// method stub
+
+												Intent passlink = new Intent(
+														MainActivity.this,
+														checktab.class);
+												String url = "http://www.blsindiavisa-uae.com/passport/passport%20forms/eap2.pdf";
+												passlink.putExtra("message",
+														url);
+												startActivity(passlink);
+											}
+										});
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+										break;
+
+									case 8:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(R.layout.faq_tab, null);
+
+										WebView faqq_web = (WebView) rl
+												.findViewById(R.id.faq_webview);
+										faqq_web.loadUrl("file:///android_asset/cgihtml/passportsection/faq_passport.html");
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+										break;
+
+									default:
+										break;
+									}
+
+								}
+							});
+
+					break;
+				case 4:// indian visa/OCI
+
+					mLevelAView.setVisibility(View.GONE);
+					mLevelCView.setVisibility(View.GONE);
+					mLevelBView.setVisibility(View.VISIBLE);
+
+					ll.addView(mLevelBView);
+					mLevelAList.setItemChecked(position, true);
+					setTitle(ALevelArray[1]);
+					mLevelBList.setAdapter(new ArrayAdapter<String>(
+							MainActivity.this, R.layout.custom_list_inside,
+							VisaOCI));
+					menuid.setText("Visa/OCI");
+					r1.removeAllViews();
+					rl = (ViewGroup) getLayoutInflater().inflate(
+							R.layout.e_tourist_tab, null);
+					WebView tourist_web = (WebView) rl
+							.findViewById(R.id.tourist_webview);
+					tourist_web
+							.loadUrl("file:///android_asset/cgihtml/visa_oci/e-tourist.html");
+					ImageView etourist = (ImageView) rl
+							.findViewById(R.id.download_form_button);
+
+					etourist.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated
+							// method stub
+
+							Intent passlink = new Intent(MainActivity.this,
+									checktab.class);
+							String url = "https://indianvisaonline.gov.in/visa/info1.jsp";
+							passlink.putExtra("message", url);
+							startActivity(passlink);
+						}
+					});
+					sos = (ImageButton) rl.findViewById(R.id.imageButton1);
+					sos.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method
+							// stub
+							call1("0097180046342");
+						}
+					});
+					r1.addView(rl);
+					mLevelBList
+							.setOnItemClickListener(new OnItemClickListener() {
+
+								@Override
+								public void onItemClick(AdapterView<?> arg0,
+										View arg1, int Pass_postion, long arg3) {
+
+									// Initialize Animations
+
+									switch (Pass_postion) {
+									case 0:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.e_tourist_tab,
+														null);
+										WebView tourist_web = (WebView) rl
+												.findViewById(R.id.tourist_webview);
+										tourist_web
+												.loadUrl("file:///android_asset/cgihtml/visa_oci/e-tourist.html");
+										ImageView etourist = (ImageView) rl
+												.findViewById(R.id.download_form_button);
+
+										etourist.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated
+
+												Intent passlink = new Intent(
+														MainActivity.this,
+														checktab.class);
+												String url = "https://indianvisaonline.gov.in/visa/info1.jsp";
+												passlink.putExtra("message",
+														url);
+												startActivity(passlink);
+											}
+										});
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+										break;
+
+									case 1:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.indian_visa_tab,
+														null);
+										WebView indianvisa_web = (WebView) rl
+												.findViewById(R.id.indianvisa_web);
+										indianvisa_web
+												.loadUrl("file:///android_asset/cgihtml/visa_oci/indian_visa.html");
+										ImageView indianvisa = (ImageView) rl
+												.findViewById(R.id.download_form_button);
+
+										indianvisa
+												.setOnClickListener(new OnClickListener() {
+
+													@Override
+													public void onClick(View v) {
+														// TODO Auto-generated
+
+														Intent passlink = new Intent(
+																MainActivity.this,
+																checktab.class);
+														String url = "http://www.indianvisaonline.gov.in/visa";
+														passlink.putExtra(
+																"message", url);
+														startActivity(passlink);
+													}
+												});
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+
+										break;
+
+									case 2:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(R.layout.oci_tab, null);
+										WebView oci_web = (WebView) rl
+												.findViewById(R.id.oci_web);
+										oci_web.loadUrl("file:///android_asset/cgihtml/visa_oci/oci.html");
+
+										ImageView oci = (ImageView) rl
+												.findViewById(R.id.download_form_button);
+
+										oci.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated
+												// method stub
+
+												Intent passlink = new Intent(
+														MainActivity.this,
+														checktab.class);
+												String url = "https://passport.gov.in/oci/welcome";
+												passlink.putExtra("message",
+														url);
+												startActivity(passlink);
+											}
+										});
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+										break;
+
+									case 3:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(R.layout.faq_tab, null);
+
+										WebView faqq_web = (WebView) rl
+												.findViewById(R.id.faq_webview);
+										faqq_web.loadUrl("file:///android_asset/cgihtml/passportsection/faq_passport.html");
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+										break;
+
+									default:
+										break;
+									}
+								}
+							});
+
+					break;
+				case 5:// labour welfare
+					mLevelAView.setVisibility(View.GONE);
+					mLevelCView.setVisibility(View.GONE);
+					mLevelBView.setVisibility(View.VISIBLE);
+
+					ll.addView(mLevelBView);
+					final insideapdapter inner = new insideapdapter(
+							MainActivity.this, Labour_Welfare);
+					mLevelBList.setAdapter(inner);
+
+					menuid.setText("Labour Welfare");
+					r1.removeAllViews();
+					rl = (ViewGroup) getLayoutInflater().inflate(
+							R.layout.overview_tab, null);
+					WebView overview_web = (WebView) rl
+							.findViewById(R.id.over_view_web);
+					overview_web
+							.loadUrl("file:///android_asset/cgihtml/labour/overview.html");
+
+					sos = (ImageButton) rl.findViewById(R.id.imageButton1);
+					sos.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method
+							// stub
+							call1("0097180046342");
+						}
+					});
+					r1.addView(rl);
+					mLevelBList
+							.setOnItemClickListener(new OnItemClickListener() {
+
+								@Override
+								public void onItemClick(AdapterView<?> arg0,
+										View arg1, int Pass_postion, long arg3) {
+
+									// Initialize Animations
+
+									switch (Pass_postion) {
+									case 0:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(R.layout.overview_tab,
+														null);
+										WebView overview_web = (WebView) rl
+												.findViewById(R.id.over_view_web);
+										overview_web
+												.loadUrl("file:///android_asset/cgihtml/labour/overview.html");
+
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+										break;
+
+									case 1:
+
+										mLevelAView.setVisibility(View.GONE);
+										mLevelCView.setVisibility(View.VISIBLE);
+										mLevelBView.setVisibility(View.GONE);
+										// Initialize Animations
+										ll.addView(mLevelCView);
+
+										mLevelCList
+												.setAdapter(new ArrayAdapter<String>(
+														MainActivity.this,
+														R.layout.custom_list_inside,
+														Recruitment));
+
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.wage_structure_tab,
+														null);
+
+										WebView recruitin = (WebView) rl
+												.findViewById(R.id.wage_web);
+										recruitin
+												.loadUrl("file:///android_asset/cgihtml/labour/wage.html");
+
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO
+												// Auto-generated
+												// method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+
+										mLevelCList
+												.setOnItemClickListener(new OnItemClickListener() {
+
+													@Override
+													public void onItemClick(
+															AdapterView<?> arg0,
+															View arg1,
+															int pas_position,
+															long arg3) {
+														switch (pas_position) {
+														case 0:
+															r1.removeAllViews();
+															rl = (ViewGroup) getLayoutInflater()
+																	.inflate(
+																			R.layout.wage_structure_tab,
+																			null);
+
+															WebView overview_web = (WebView) rl
+																	.findViewById(R.id.wage_web);
+															overview_web
+																	.loadUrl("file:///android_asset/cgihtml/labour/wage.html");
+
+															sos = (ImageButton) rl
+																	.findViewById(R.id.imageButton1);
+															sos.setOnClickListener(new OnClickListener() {
+
+																@Override
+																public void onClick(
+																		View v) {
+																	// TODO
+																	// Auto-generated
+																	// method
+																	// stub
+																	call1("0097180046342");
+																}
+															});
+															r1.addView(rl);
+															break;
+
+														case 1:
+															r1.removeAllViews();
+															rl = (ViewGroup) getLayoutInflater()
+																	.inflate(
+																			R.layout.house_maid_tab,
+																			null);
+															WebView housemaidweb = (WebView) rl
+																	.findViewById(R.id.housemaid_web);
+															housemaidweb
+																	.loadUrl("file:///android_asset/cgihtml/labour/Housemaids.html");
+
+															sos = (ImageButton) rl
+																	.findViewById(R.id.imageButton1);
+															sos.setOnClickListener(new OnClickListener() {
+
+																@Override
+																public void onClick(
+																		View v) {
+																	// TODO
+																	// Auto-generated
+																	// method
+																	// stub
+																	call1("0097180046342");
+																}
+															});
+															r1.addView(rl);
+
+															break;
+
+														case 2:
+															r1.removeAllViews();
+															rl = (ViewGroup) getLayoutInflater()
+																	.inflate(
+																			R.layout.individual_worker_tab,
+																			null);
+															WebView indi_web = (WebView) rl
+																	.findViewById(R.id.indiweb);
+															indi_web.loadUrl("file:///android_asset/cgihtml/labour/individual.html");
+
+															sos = (ImageButton) rl
+																	.findViewById(R.id.imageButton1);
+															sos.setOnClickListener(new OnClickListener() {
+
+																@Override
+																public void onClick(
+																		View v) {
+																	// TODO
+																	// Auto-generated
+																	// method
+																	// stub
+																	call1("0097180046342");
+																}
+															});
+															r1.addView(rl);
+															break;
+
+														case 3:
+															r1.removeAllViews();
+															rl = (ViewGroup) getLayoutInflater()
+																	.inflate(
+																			R.layout.group_of_worker_tab,
+																			null);
+															WebView group_web = (WebView) rl
+																	.findViewById(R.id.groupweb);
+															group_web
+																	.loadUrl("file:///android_asset/cgihtml/labour/group_workers.html");
+
+															sos = (ImageButton) rl
+																	.findViewById(R.id.imageButton1);
+															sos.setOnClickListener(new OnClickListener() {
+
+																@Override
+																public void onClick(
+																		View v) {
+																	// TODO
+																	// Auto-generated
+																	// method
+																	// stub
+																	call1("0097180046342");
+																}
+															});
+															r1.addView(rl);
+
+															break;
+
+														case 4:
+															r1.removeAllViews();
+															rl = (ViewGroup) getLayoutInflater()
+																	.inflate(
+																			R.layout.emigrate_tab,
+																			null);
+															WebView emigratesweb = (WebView) rl
+																	.findViewById(R.id.emigrate_web);
+
+															emigratesweb
+																	.loadUrl("file:///android_asset/cgihtml/labour/emigrate.html");
+
+															sos = (ImageButton) rl
+																	.findViewById(R.id.imageButton1);
+															sos.setOnClickListener(new OnClickListener() {
+
+																@Override
+																public void onClick(
+																		View v) {
+																	// TODO
+																	// Auto-generated
+																	// method
+																	// stub
+																	call1("0097180046342");
+																}
+															});
+															r1.addView(rl);
+															break;
+
+														default:
+															break;
+														}
+
+													}
+												});
+
+										break;
+
+									case 2:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.community_affairs_tab,
+														null);
+										WebView community_affaurs = (WebView) rl
+												.findViewById(R.id.community_web);
+										community_affaurs
+												.loadUrl("file:///android_asset/cgihtml/labour/community.html");
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+										break;
+
+									case 3:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.labour_dispute_tab,
+														null);
+										WebView laboursidpute = (WebView) rl
+												.findViewById(R.id.labour_web);
+										laboursidpute
+												.loadUrl("file:///android_asset/cgihtml/labour/labour_dispute.html");
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+
+										break;
+
+									case 4:
+										Intent intent = new Intent(
+												"android.intent.action.VIEW");
+										Uri data = Uri.parse("sms:"
+												+ "+971 55 870 3725");
+										intent.setData(data);
+										startActivity(intent);
+										break;
+
+									case 5:
+										call1("0097143070783");
+
+										break;
+									case 7:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.griviencereadressable,
+														null);
+										call_iwrc = (ImageView) rl
+												.findViewById(R.id.call_iwcr_button);
+
+										WebView Grievanceredressal = (WebView) rl
+												.findViewById(R.id.Grievanceredressalweb);
+
+										Grievanceredressal
+												.loadUrl("file:///android_asset/grievance_edressal.html");
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+
+										call_iwrc
+												.setOnClickListener(new OnClickListener() {
+
+													@Override
+													public void onClick(View v) {
+														// TODO Auto-generated
+														// method stub
+														call1("80046342");
+													}
+												});
+										ImageView grievience_report = (ImageView) rl
+												.findViewById(R.id.Report_Grievance_button);
+										grievience_report
+												.setOnClickListener(new OnClickListener() {
+
+													@Override
+													public void onClick(View v) {
+														// TODO Auto-generated
+														// method stub
+
+														r1.removeAllViews();
+														rl = (ViewGroup) getLayoutInflater()
+																.inflate(
+																		R.layout.grievience_report,
+																		null);
+														gr_editcapche = (EditText) rl.findViewById(R.id.gr_captchaedittext);
+														gr_textcapche = (TextView) rl.findViewById(R.id.gr_captchatext);
+											
+														gr_imageview_refresh = (ImageView) rl.findViewById(R.id.gr_refresh);
+									                	gr_textcapche.setText(getRandomString());
+
+														gr_imageview_refresh.setOnClickListener(new OnClickListener() {
+												                @Override
+												                public void onClick(View v) {
+												                	
+												                	gr_textcapche.setText(getRandomString());
+												                	gr_editcapche.setText("");
+												                }
+												          });
+														ImageView submit_gr = (ImageView) rl
+																.findViewById(R.id.gr_sumit_button);
+														gr_editname = (EditText) rl
+																.findViewById(R.id.gr_name);
+														gr_editmoblenumber = (EditText) rl
+																.findViewById(R.id.gr_mobile_number);
+
+														gr_editpassportnum = (EditText) rl
+																.findViewById(R.id.gr_passport);
+
+														gr_editemail = (EditText) rl
+																.findViewById(R.id.gr_email);
+														gr_text = (EditText) rl
+																.findViewById(R.id.gr_text);
+														gr_selecttext = (TextView) rl
+																.findViewById(R.id.GR_SELECT_SUBJECT);
+													
+														gr_selecttext
+																.setOnClickListener(new OnClickListener() {
+
+																	@Override
+																	public void onClick(
+																			View v) {
+																		// TODO
+																		// Auto-generated
+																		// method
+																		// stub
+																	
+														
+																		dialog = new Dialog(
+																				MainActivity.this);
+																		dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+																		LayoutInflater li = (LayoutInflater) MainActivity.this
+																				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+																		View vas = li
+																				.inflate(
+																						R.layout.titlebackgroungcolor,
+																						null,
+																						false);
+																		dialog.setContentView(vas);
+																		dialog.setCancelable(false);
+																
+																		ImageView closebut = (ImageView) dialog
+																				.findViewById(R.id.closebutton);
+																		closebut.setOnClickListener(new OnClickListener() {
+
+																			@Override
+																			public void onClick(
+																					View v) {
+																				// TODO
+																				// Auto-generated
+																				// method
+																				// stub
+
+																				dialog.dismiss();
+
+																			}
+																		});
+																		ListView list1 = (ListView) dialog
+																				.findViewById(R.id.listView1);
+																		list1.setAdapter(new ArrayAdapter<String>(
+																				MainActivity.this,
+																				android.R.layout.simple_list_item_1,
+																				val));
+																		list1.setOnItemClickListener(new OnItemClickListener() {
+
+																			@Override
+																			public void onItemClick(
+																					AdapterView<?> parent,
+																					View view,
+																					int position,
+																					long id) {
+																				// TODO
+																				// Auto-generated
+																				// method
+																				// stub
+																				gr_selecttext
+																						.setText(val[position]
+																								.toString());
+																				dialog.dismiss();
+																			}
+																		});
+
+																		// now
+																		// that
+																		// the
+																		// dialog
+																		// is
+																		// set
+																		// up,
+																		// it's
+																		// time
+																		// to
+																		// show
+																		// it
+																		dialog.show();
+																	}
+																});
+														submit_gr
+																.setOnClickListener(new OnClickListener() {
+
+																	@Override
+																	public void onClick(
+																			View v) {
+																		// TODO
+																		// Auto-generated
+																		// method
+																		// stub
+																		 String text_random_enter=gr_editcapche.getText().toString();
+														                    
+														                    
+														                   
+														                    	
+														                   
+																		cd = new ConnectionDetector(
+																				getApplicationContext());
+																		InputMethodManager imm = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
+																		imm.toggleSoftInput(
+																				InputMethodManager.HIDE_IMPLICIT_ONLY,
+																				0);
+																		// get
+																		// Internet
+																		// status
+																		isInternetPresent = cd
+																				.isConnectingToInternet();
+
+																		if (isInternetPresent) {
+
+																			if (gr_editname
+																					.getText()
+																					.toString()
+																					.trim()
+																					.equals("")
+																					|| gr_editmoblenumber
+																							.getText()
+																							.toString()
+																							.trim()
+																							.equals("")
+																					|| gr_editemail
+																							.getText()
+																							.toString()
+																							.trim()
+																							.equals("")
+																					|| gr_editpassportnum
+																							.getText()
+																							.toString()
+																							.trim()
+																							.equals("")
+																					|| gr_selecttext
+																							.getText()
+																							.toString()
+																							.trim()
+																							.equals("")
+																					|| gr_text
+																							.getText()
+																							.toString()
+																							.trim()
+																							.equals("")) {
+																				Toast.makeText(
+																						getApplicationContext(),
+																						"Please fill all details properly",
+																						Toast.LENGTH_SHORT)
+																						.show();
+
+																			} else {
+																				if(gr_editpassportnum.getText().toString().length()<=6){
+																					 Toast.makeText(
+																								getApplicationContext(),
+																								"Please enter valid passport number",
+																								Toast.LENGTH_SHORT)
+																								.show();
+																				 	
+																				}else{
+																				emailPattern = emailPattern(gr_editemail
+																						.getText()
+																						.toString());
+
+																				if (emailPattern) {
+																					 if(gr_textcapche.getText().toString().equalsIgnoreCase(text_random_enter))
+																	                    {
+																					Griviencesasync gr = new Griviencesasync();
+																					gr.execute();
+																	                    }
+																					 else{
+																					 
+																						 Toast.makeText(
+																									getApplicationContext(),
+																									"Captcha did not match",
+																									Toast.LENGTH_SHORT)
+																									.show();
+																					 
+																					 }
+																					// Obj_Registrationasyn
+																					// =
+																					// new
+																					// Registrationasyn();
+																					// Obj_Registrationasyn
+																					// .execute();
+
+																				} else {
+																					Toast.makeText(
+																							getApplicationContext(),
+																							"Please Enter Valid Email",
+																							Toast.LENGTH_SHORT)
+																							.show();
+
+																				}
+
+																			}
+																			}
+																		}
+
+																		else {
+
+																			Toast.makeText(
+																					getApplicationContext(),
+																					"Please Check Your Internet Connection",
+																					Toast.LENGTH_SHORT)
+																					.show();
+
+																		}
+														                    }
+														                  
+																	
+														                    
+																});
+
+														gr_editname
+																.addTextChangedListener(new TextWatcher() {
+
+																	@Override
+																	public void onTextChanged(
+																			CharSequence s,
+																			int start,
+																			int before,
+																			int count) {
+																		// TODO
+																		// Auto-generated
+																		// method
+																		// stub
+																		Is_Valid_First_Name(gr_editname);
+
+																	}
+
+																	@Override
+																	public void beforeTextChanged(
+																			CharSequence s,
+																			int start,
+																			int count,
+																			int after) {
+																		// TODO
+																		// Auto-generated
+																		// method
+																		// stub
+
+																	}
+
+																	@Override
+																	public void afterTextChanged(
+																			Editable s) {
+																		// TODO
+																		// Auto-generated
+																		// method
+																		// stub
+																		Is_Valid_First_Name(gr_editname);
+																	}
+																});
+
+														gr_editpassportnum
+																.addTextChangedListener(new TextWatcher() {
+
+																	@Override
+																	public void onTextChanged(
+																			CharSequence s,
+																			int start,
+																			int before,
+																			int count) {
+																		// TODO
+																		// Auto-generated
+																		// method
+																		// stub
+																		Is_Valid_Passport(gr_editpassportnum);
+
+																	}
+
+																	@Override
+																	public void beforeTextChanged(
+																			CharSequence s,
+																			int start,
+																			int count,
+																			int after) {
+																		// TODO
+																		// Auto-generated
+																		// method
+																		// stub
+
+																	}
+
+																	@Override
+																	public void afterTextChanged(
+																			Editable s) {
+																		// TODO
+																		// Auto-generated
+																		// method
+																		// stub
+																		Is_Valid_Passport(gr_editpassportnum);
+																	}
+																});
+														sos = (ImageButton) rl
+																.findViewById(R.id.imageButton1);
+														sos.setOnClickListener(new OnClickListener() {
+
+															@Override
+															public void onClick(
+																	View v) {
+																// TODO
+																// Auto-generated
+																// method
+																// stub
+																call1("0097180046342");
+															}
+														});
+														r1.addView(rl);
+
+													}
+												});
+										r1.addView(rl);
+
+										break;
+
+									case 6:
+
+										mLevelAView.setVisibility(View.GONE);
+										mLevelCView.setVisibility(View.VISIBLE);
+										mLevelBView.setVisibility(View.GONE);
+										// Initialize Animations
+										ll.addView(mLevelCView);
+
+										mLevelCList
+												.setAdapter(new ArrayAdapter<String>(
+														MainActivity.this,
+														R.layout.custom_list_inside,
+														Death_Case));
+										menuidc.setText("Death Cases");
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(R.layout.step1_tab,
+														null);
+										WebView step1_web = (WebView) rl
+												.findViewById(R.id.step1_web);
+										step1_web
+												.loadUrl("file:///android_asset/cgihtml/death/step1.html");
+
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+
+										r1.addView(rl);
+										mLevelCList
+												.setOnItemClickListener(new OnItemClickListener() {
+
+													@Override
+													public void onItemClick(
+															AdapterView<?> arg0,
+															View arg1,
+															int pas_position,
+															long arg3) {
+														switch (pas_position) {
+														case 0:
+															r1.removeAllViews();
+															rl = (ViewGroup) getLayoutInflater()
+																	.inflate(
+																			R.layout.step1_tab,
+																			null);
+															WebView step1_web = (WebView) rl
+																	.findViewById(R.id.step1_web);
+															step1_web
+																	.loadUrl("file:///android_asset/cgihtml/death/step1.html");
+
+															sos = (ImageButton) rl
+																	.findViewById(R.id.imageButton1);
+															sos.setOnClickListener(new OnClickListener() {
+
+																@Override
+																public void onClick(
+																		View v) {
+																	// TODO
+																	// Auto-generated
+																	// method
+																	// stub
+																	call1("0097180046342");
+																}
+															});
+															r1.addView(rl);
+															break;
+
+														case 1:
+															r1.removeAllViews();
+															rl = (ViewGroup) getLayoutInflater()
+																	.inflate(
+																			R.layout.step2_tab,
+																			null);
+															WebView step2_web = (WebView) rl
+																	.findViewById(R.id.step2_web);
+															step2_web
+																	.loadUrl("file:///android_asset/cgihtml/death/step2.html");
+															ImageView step2 = (ImageView) rl
+																	.findViewById(R.id.download_form_button);
+															ImageView step21 = (ImageView) rl
+																	.findViewById(R.id.download_form_button1);
+															step2.setOnClickListener(new OnClickListener() {
+
+																@Override
+																public void onClick(
+																		View v) {
+																	// TODO
+
+																	Intent passlink = new Intent(
+																			MainActivity.this,
+																			checktab.class);
+																	String url = "http://www.cgidubai.com/wp-content/uploads/2011/05/Death_Forms_Annexure-I.pdf";
+																	passlink.putExtra(
+																			"message",
+																			url);
+																	startActivity(passlink);
+																}
+															});
+															step21.setOnClickListener(new OnClickListener() {
+
+																@Override
+																public void onClick(
+																		View v) {
+																	// TODO
+																	// Auto-generated
+																	// method
+
+																	Intent passlink = new Intent(
+																			MainActivity.this,
+																			checktab.class);
+																	String url = " http://www.cgidubai.com/wp-content/uploads/2011/05/Death_Form_Annexure-II.pdf";
+																	passlink.putExtra(
+																			"message",
+																			url);
+																	startActivity(passlink);
+																}
+															});
+															sos = (ImageButton) rl
+																	.findViewById(R.id.imageButton1);
+															sos.setOnClickListener(new OnClickListener() {
+
+																@Override
+																public void onClick(
+																		View v) {
+																	// TODO
+																	// Auto-generated
+																	// method
+																	// stub
+																	call1("0097180046342");
+																}
+															});
+															r1.addView(rl);
+
+															break;
+
+														case 2:
+															r1.removeAllViews();
+															rl = (ViewGroup) getLayoutInflater()
+																	.inflate(
+																			R.layout.step3_tab,
+																			null);
+															WebView step3_web = (WebView) rl
+																	.findViewById(R.id.step3_web);
+															step3_web
+																	.loadUrl("file:///android_asset/cgihtml/death/step3.html");
+
+															sos = (ImageButton) rl
+																	.findViewById(R.id.imageButton1);
+															sos.setOnClickListener(new OnClickListener() {
+
+																@Override
+																public void onClick(
+																		View v) {
+																	// TODO
+																	// Auto-generated
+																	// method
+																	// stub
+																	call1("0097180046342");
+																}
+															});
+															r1.addView(rl);
+															break;
+
+														case 3:
+															r1.removeAllViews();
+															rl = (ViewGroup) getLayoutInflater()
+																	.inflate(
+																			R.layout.step4_tab,
+																			null);
+															WebView step4_web = (WebView) rl
+																	.findViewById(R.id.step4_web);
+															step4_web
+																	.loadUrl("file:///android_asset/cgihtml/death/step4.html");
+
+															sos = (ImageButton) rl
+																	.findViewById(R.id.imageButton1);
+															sos.setOnClickListener(new OnClickListener() {
+
+																@Override
+																public void onClick(
+																		View v) {
+																	// TODO
+																	// Auto-generated
+																	// method
+																	// stub
+																	call1("0097180046342");
+																}
+															});
+															r1.addView(rl);
+
+															break;
+
+														case 4:
+
+															call1("00971507347676");
+															break;
+
+														case 5:
+															r1.removeAllViews();
+															rl = (ViewGroup) getLayoutInflater()
+																	.inflate(
+																			R.layout.imp_conatct_no_tab,
+																			null);
+															WebView cntctimp = (WebView) rl
+																	.findViewById(R.id.conatct_web);
+
+															cntctimp.loadUrl("file:///android_asset/cgihtml/contact.html");
+
+															sos = (ImageButton) rl
+																	.findViewById(R.id.imageButton1);
+															sos.setOnClickListener(new OnClickListener() {
+
+																@Override
+																public void onClick(
+																		View v) {
+																	// TODO
+																	// Auto-generated
+																	// method
+																	// stub
+																	call1("0097180046342");
+																}
+															});
+															r1.addView(rl);
+
+															break;
+
+														default:
+															break;
+														}
+													}
+												});
+
+										break;
+
+									default:
+										break;
+									}
+
+								}
+							});
+
+					break;
+				// case 6:// DEATH CASES
+				// mLevelAView.setVisibility(View.GONE);
+				// mLevelCView.setVisibility(View.GONE);
+				// mLevelBView.setVisibility(View.VISIBLE);
+				//
+				// ll.addView(mLevelBView);
+				//
+				// mLevelBList.setAdapter(new ArrayAdapter<String>(
+				// MainActivity.this, R.layout.custom_list_inside,
+				// Death_Case));
+				// menuid.setText("Death Cases");
+				// r1.removeAllViews();
+				// rl = (ViewGroup) getLayoutInflater().inflate(
+				// R.layout.step1_tab, null);
+				// WebView step1_web = (WebView) rl
+				// .findViewById(R.id.step1_web);
+				// step1_web
+				// .loadUrl("file:///android_asset/cgihtml/death/step1.html");
+				//
+				// sos = (ImageButton) rl.findViewById(R.id.imageButton1);
+				// sos.setOnClickListener(new OnClickListener() {
+				//
+				// @Override
+				// public void onClick(View v) {
+				// // TODO Auto-generated method
+				// // stub
+				// call1("0097180046342");
+				// }
+				// });
+				// r1.addView(rl);
+				// mLevelBList
+				// .setOnItemClickListener(new OnItemClickListener() {
+				//
+				// @Override
+				// public void onItemClick(AdapterView<?> arg0,
+				// View arg1, int Pass_postion, long arg3) {
+				//
+				// // Initialize Animations
+				//
+				// switch (Pass_postion) {
+				// case 0:
+				// r1.removeAllViews();
+				// rl = (ViewGroup) getLayoutInflater()
+				// .inflate(R.layout.step1_tab,
+				// null);
+				// WebView step1_web = (WebView) rl
+				// .findViewById(R.id.step1_web);
+				// step1_web
+				// .loadUrl("file:///android_asset/cgihtml/death/step1.html");
+				//
+				// sos = (ImageButton) rl
+				// .findViewById(R.id.imageButton1);
+				// sos.setOnClickListener(new OnClickListener() {
+				//
+				// @Override
+				// public void onClick(View v) {
+				// // TODO Auto-generated method
+				// // stub
+				// call1("0097180046342");
+				// }
+				// });
+				// r1.addView(rl);
+				// break;
+				//
+				// case 1:
+				// r1.removeAllViews();
+				// rl = (ViewGroup) getLayoutInflater()
+				// .inflate(R.layout.step2_tab,
+				// null);
+				// WebView step2_web = (WebView) rl
+				// .findViewById(R.id.step2_web);
+				// step2_web
+				// .loadUrl("file:///android_asset/cgihtml/death/step2.html");
+				// ImageView step2 = (ImageView) rl
+				// .findViewById(R.id.download_form_button);
+				// ImageView step21 = (ImageView) rl
+				// .findViewById(R.id.download_form_button1);
+				// step2.setOnClickListener(new OnClickListener() {
+				//
+				// @Override
+				// public void onClick(View v) {
+				// // TODO
+				//
+				// Intent passlink = new Intent(
+				// MainActivity.this,
+				// checktab.class);
+				// String url =
+				// "http://www.cgidubai.com/wp-content/uploads/2011/05/Death_Forms_Annexure-I.pdf";
+				// passlink.putExtra("message",
+				// url);
+				// startActivity(passlink);
+				// }
+				// });
+				// step21.setOnClickListener(new OnClickListener() {
+				//
+				// @Override
+				// public void onClick(View v) {
+				// // TODO
+				// // Auto-generated
+				// // method
+				//
+				// Intent passlink = new Intent(
+				// MainActivity.this,
+				// checktab.class);
+				// String url =
+				// " http://www.cgidubai.com/wp-content/uploads/2011/05/Death_Form_Annexure-II.pdf";
+				// passlink.putExtra("message",
+				// url);
+				// startActivity(passlink);
+				// }
+				// });
+				// sos = (ImageButton) rl
+				// .findViewById(R.id.imageButton1);
+				// sos.setOnClickListener(new OnClickListener() {
+				//
+				// @Override
+				// public void onClick(View v) {
+				// // TODO Auto-generated method
+				// // stub
+				// call1("0097180046342");
+				// }
+				// });
+				// r1.addView(rl);
+				//
+				// break;
+				//
+				// case 2:
+				// r1.removeAllViews();
+				// rl = (ViewGroup) getLayoutInflater()
+				// .inflate(R.layout.step3_tab,
+				// null);
+				// WebView step3_web = (WebView) rl
+				// .findViewById(R.id.step3_web);
+				// step3_web
+				// .loadUrl("file:///android_asset/cgihtml/death/step3.html");
+				//
+				// sos = (ImageButton) rl
+				// .findViewById(R.id.imageButton1);
+				// sos.setOnClickListener(new OnClickListener() {
+				//
+				// @Override
+				// public void onClick(View v) {
+				// // TODO Auto-generated method
+				// // stub
+				// call1("0097180046342");
+				// }
+				// });
+				// r1.addView(rl);
+				// break;
+				//
+				// case 3:
+				// r1.removeAllViews();
+				// rl = (ViewGroup) getLayoutInflater()
+				// .inflate(R.layout.step4_tab,
+				// null);
+				// WebView step4_web = (WebView) rl
+				// .findViewById(R.id.step4_web);
+				// step4_web
+				// .loadUrl("file:///android_asset/cgihtml/death/step4.html");
+				//
+				// sos = (ImageButton) rl
+				// .findViewById(R.id.imageButton1);
+				// sos.setOnClickListener(new OnClickListener() {
+				//
+				// @Override
+				// public void onClick(View v) {
+				// // TODO Auto-generated method
+				// // stub
+				// call1("0097180046342");
+				// }
+				// });
+				// r1.addView(rl);
+				//
+				// break;
+				//
+				// case 4:
+				//
+				// call1("00971507347676");
+				// break;
+				//
+				// case 5:
+				// r1.removeAllViews();
+				// rl = (ViewGroup) getLayoutInflater()
+				// .inflate(
+				// R.layout.imp_conatct_no_tab,
+				// null);
+				// WebView cntctimp = (WebView) rl
+				// .findViewById(R.id.conatct_web);
+				//
+				// cntctimp.loadUrl("file:///android_asset/cgihtml/contact.html");
+				//
+				// sos = (ImageButton) rl
+				// .findViewById(R.id.imageButton1);
+				// sos.setOnClickListener(new OnClickListener() {
+				//
+				// @Override
+				// public void onClick(View v) {
+				// // TODO Auto-generated method
+				// // stub
+				// call1("0097180046342");
+				// }
+				// });
+				// r1.addView(rl);
+				//
+				// break;
+				//
+				// default:
+				// break;
+				// }
+				// }
+				// });
+				//
+				// break;
+				case 6:// CULTURE
+					mLevelAView.setVisibility(View.GONE);
+					mLevelCView.setVisibility(View.GONE);
+					mLevelBView.setVisibility(View.VISIBLE);
+
+					ll.addView(mLevelBView);
+					mLevelAList.setItemChecked(position, true);
+					mLevelBList.setAdapter(new ArrayAdapter<String>(
+							MainActivity.this, R.layout.custom_list_inside,
+							Culture));
+					menuid.setText("Culture");
+					r1.removeAllViews();
+					rl = (ViewGroup) getLayoutInflater().inflate(
+							R.layout.indradhanush_tab, null);
+					WebView indra_web = (WebView) rl
+							.findViewById(R.id.indradhanush_web);
+					// message_consolate.getSettings().setJavaScriptEnabled(true);
+					indra_web
+							.loadUrl("file:///android_asset/cgihtml/culture_section/indradhanush.html");
+					sos = (ImageButton) rl.findViewById(R.id.imageButton1);
+					sos.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method
+							// stub
+							call1("0097180046342");
+						}
+					});
+					r1.addView(rl);
+					mLevelBList
+							.setOnItemClickListener(new OnItemClickListener() {
+
+								@Override
+								public void onItemClick(AdapterView<?> arg0,
+										View arg1, int Pass_postion, long arg3) {
+
+									// Initialize Animations
+
+									switch (Pass_postion) {
+									case 0:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.indradhanush_tab,
+														null);
+										WebView indra_web = (WebView) rl
+												.findViewById(R.id.indradhanush_web);
+										// message_consolate.getSettings().setJavaScriptEnabled(true);
+										indra_web
+												.loadUrl("file:///android_asset/cgihtml/culture_section/indradhanush.html");
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+										break;
+
+									case 1:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(R.layout.manthan_tab,
+														null);
+										WebView manthanweb = (WebView) rl
+												.findViewById(R.id.manthan_web);
+										// message_consolate.getSettings().setJavaScriptEnabled(true);
+										manthanweb
+												.loadUrl("file:///android_asset/cgihtml/culture_section/Manthan.html");
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+
+										break;
+
+									case 2:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(R.layout.utkarsh_tab,
+														null);
+										WebView utar_web = (WebView) rl
+												.findViewById(R.id.utarksh_web);
+										utar_web.loadUrl("file:///android_asset/cgihtml/culture_section/Utkarsh.html");
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+										break;
+
+									case 3:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.shree_shakti_tab,
+														null);
+										WebView shreeeweb = (WebView) rl
+												.findViewById(R.id.shreeweb);
+										shreeeweb
+												.loadUrl("file:///android_asset/cgihtml/culture_section/Stree.html");
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+
+										break;
+									case 4:
+										r1.removeAllViews();
+										rl = (ViewGroup) getLayoutInflater()
+												.inflate(
+														R.layout.event_calender_tab,
+														null);
+										sos = (ImageButton) rl
+												.findViewById(R.id.imageButton1);
+										sos.setOnClickListener(new OnClickListener() {
+
+											@Override
+											public void onClick(View v) {
+												// TODO Auto-generated method
+												// stub
+												call1("0097180046342");
+											}
+										});
+										r1.addView(rl);
+									default:
+										break;
+									}
+
+								}
+							});
+
+					break;
+
+				case 7:// lINK OF GOI
+					r1.removeAllViews();
+					rl = (ViewGroup) getLayoutInflater().inflate(
+							R.layout.logoi, null);
+					sos = (ImageButton) rl.findViewById(R.id.imageButton1);
+					sos.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							call1("0097180046342");
+						}
+					});
+
+					RelativeLayout masdad = (RelativeLayout) rl
+							.findViewById(R.id.madad_rl);
+					masdad.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							Intent passlink = new Intent(MainActivity.this,
+									checktab.class);
+							String url0 = "https://org1.passportindia.gov.in/AppConsularProject/welcomeLink";
+							passlink.putExtra("message", url0);
+							startActivity(passlink);
+						}
+					});
+					RelativeLayout emigatelink = (RelativeLayout) rl
+							.findViewById(R.id.rl_emigrates);
+					emigatelink.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							Intent passlink = new Intent(MainActivity.this,
+									checktab.class);
+							String url00 = "https://www.uaeindians.org/recruitment/";
+							passlink.putExtra("message", url00);
+							startActivity(passlink);
+						}
+					});
+					RelativeLayout pmolink = (RelativeLayout) rl
+							.findViewById(R.id.rl_pmo);
+					pmolink.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							Intent passlink = new Intent(MainActivity.this,
+									checktab.class);
+							String url1 = "http://pmindia.gov.in/en/";
+							passlink.putExtra("message", url1);
+							startActivity(passlink);
+						}
+					});
+					RelativeLayout modi = (RelativeLayout) rl
+							.findViewById(R.id.rl_narendremodi);
+					modi.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							Intent passlink = new Intent(MainActivity.this,
+									checktab.class);
+							String url2 = "https://play.google.com/store/apps/details?id=com.narendramodiapp";
+							passlink.putExtra("message", url2);
+							startActivity(passlink);
+						}
+					});
+					RelativeLayout meaapplink = (RelativeLayout) rl
+							.findViewById(R.id.rl_meapp);
+					meaapplink.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							Intent passlink = new Intent(MainActivity.this,
+									checktab.class);
+							String url4 = "https://play.google.com/store/apps/details?id=com.mea";
+							passlink.putExtra("message", url4);
+							startActivity(passlink);
+						}
+					});
+					r1.addView(rl);
+
+					break;
+				case 8:
+
+					Intent passlink4 = new Intent(MainActivity.this,
+							checktab.class);
+					String url4q = "http://www.cgidubai.com/category/news-media/press-releases-consulate/";
+					passlink4.putExtra("message", url4q);
+					startActivity(passlink4);
+					break;
+				case 9:
+					r1.removeAllViews();
+					rl = (ViewGroup) getLayoutInflater().inflate(
+							R.layout.contact_us_tab, null);
+					sos = (ImageButton) rl.findViewById(R.id.imageButton1);
+					sos.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							call1("0097180046342");
+						}
+					});
+					r1.addView(rl);
+					break;
+				case 10:
+
+					r1.removeAllViews();
+					rl = (ViewGroup) getLayoutInflater().inflate(
+							R.layout.aboutthisapp, null);
+
+					WebView abtapp1 = (WebView) rl.findViewById(R.id.webabtapp);
+					abtapp1.setWebViewClient(new MyBrowser());
+
+					abtapp1.loadUrl("file:///android_asset/cgihtml/about_app.html");
+
+					WebView abtapp2 = (WebView) rl
+							.findViewById(R.id.webabtapp1);
+					abtapp2.loadUrl("file:///android_asset/cgihtml/about_app_two.html");
+
+					sos = (ImageButton) rl.findViewById(R.id.imageButton1);
+					sos.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							call1("0097180046342");
+						}
+					});
+
+					ImageView write = (ImageView) rl
+							.findViewById(R.id.writeiamge);
+					write.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							Intent emailIntent = new Intent(
+									Intent.ACTION_SENDTO, Uri.fromParts(
+											"mailto", "cgidubai@cgidubai.com ",
+											null));
+
+							startActivity(Intent.createChooser(emailIntent,
+									"Send email..."));
+						}
+					});
+					//
+					ImageView spread = (ImageView) rl
+							.findViewById(R.id.spreadiamge);
+					spread.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							Intent sharingIntent = new Intent(
+									android.content.Intent.ACTION_SEND);
+							sharingIntent.setType("text/plain");
+							sharingIntent.putExtra(
+									android.content.Intent.EXTRA_SUBJECT,
+									"CGI Dubai App");
+							sharingIntent
+									.putExtra(
+											android.content.Intent.EXTRA_TEXT,
+											"Check out the CGI Dubai App on https://play.google.com/store/apps/details?id=com.cgi.dubai");
+							startActivity(Intent.createChooser(sharingIntent,
+									"Share via"));
+
+							//
+
+							// sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT,
+							// aboutappModel.getEmailContent());
+						}
+					});
+					//
+					ImageView rate = (ImageView) rl
+							.findViewById(R.id.rateimage);
+					rate.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							Intent rateIntent = new Intent(Intent.ACTION_VIEW,
+									Uri.parse("market://details?id="
+											+ getPackageName()));
+
+							startActivity(rateIntent);
+
+						}
+					});
+					TextView t1 = (TextView) rl.findViewById(R.id.writtext);
+					t1.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							Intent emailIntent = new Intent(
+									Intent.ACTION_SENDTO, Uri.fromParts(
+											"mailto", "cgidubai@cgidubai.com ",
+											null));
+
+							startActivity(Intent.createChooser(emailIntent,
+									"Send email..."));
+
+						}
+					});
+					TextView t2 = (TextView) rl.findViewById(R.id.spreadtext);
+					t2.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							Intent sharingIntent = new Intent(
+									android.content.Intent.ACTION_SEND);
+							sharingIntent.setType("text/plain");
+							sharingIntent.putExtra(
+									android.content.Intent.EXTRA_SUBJECT,
+									"CGI Dubai App");
+							sharingIntent
+									.putExtra(
+											android.content.Intent.EXTRA_TEXT,
+											"Check out the CGI Dubai App on https://play.google.com/store/apps/details?id=com.cgi.dubai");
+							startActivity(Intent.createChooser(sharingIntent,
+									"Share via"));
+
+						}
+					});
+					TextView t3 = (TextView) rl.findViewById(R.id.ratetext);
+					t3.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							Intent rateIntent = new Intent(Intent.ACTION_VIEW,
+									Uri.parse("market://details?id="
+											+ getPackageName()));
+
+							startActivity(rateIntent);
+						}
+					});
+					// ImageView twc_logo = (ImageView) rl
+					// .findViewById(R.id.twclogo);
+					// twc_logo.setOnClickListener(new OnClickListener() {
+					//
+					// @Override
+					// public void onClick(View v) {
+					// // TODO Auto-generated method stub
+					//
+					// Uri uri = Uri
+					// .parse("http://www.thewhiteboard.company"); // missing
+					// // 'http://'
+					// // will
+					// // cause
+					// // crashed
+					// Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+					// startActivity(intent);
+					//
+					// }
+					// });
+					r1.addView(rl);
+					break;
+				default:
+
+					break;
+				}
+
+			}
+
+			public void Selectitem(int position) {
+				// TODO Auto-generated method stub
+				mLevelAList.setItemChecked(position, true);
+
+			}
+
+		});
+
+		mLevelBBtn.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+
+				ll.removeAllViewsInLayout();
+
+				mLevelBView.setVisibility(View.GONE);
+
+				mLevelAView.setVisibility(View.VISIBLE);
+				mLevelCView.setVisibility(View.GONE);
+
+				ll.addView(mLevelAView);
+
+				mLevelAList.setAdapter(First_adapter);
+
+			}
+		});
+
+		mLevelCBtn.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				ll.removeAllViewsInLayout();
+
+				mLevelCView.setVisibility(View.GONE);
+
+				mLevelBView.setVisibility(View.VISIBLE);
+				mLevelAView.setVisibility(View.GONE);
+
+				ll.addView(mLevelBView);
+
+			}
+		});
+
+	}
+
+	public void call1(String nos) {
+		Intent callIntent = new Intent(Intent.ACTION_DIAL);
+		callIntent.setData(Uri.parse("tel:" + nos));
+		startActivity(callIntent);
+	}
+
+	class Registrationasyn extends AsyncTask<Void, Integer, Void> {
+
+		@Override
+		protected void onPreExecute() {
+			mProgressDialog = new ProgressDialog(MainActivity.this);
+			mProgressDialog.setTitle("Loading...");
+			mProgressDialog.show();
+
+		}
+
+		@Override
+		protected Void doInBackground(Void... params) {
+
+			try {
+				restUrl = "name="
+						+ URLEncoder.encode(editname.getText().toString()
+								.trim(), "UTF-8")
+						+ "&dob="
+						+ URLEncoder.encode(
+								editdob.getText().toString().trim(), "UTF-8")
+						+ "&nationality="
+						+ URLEncoder.encode(editnationality.getText()
+								.toString().trim(), "UTF-8")
+						+ "&passport_no="
+						+ URLEncoder.encode(editpassportnum.getText()
+								.toString().trim(), "UTF-8")
+						+ "&email="
+						+ URLEncoder.encode(editemail.getText().toString()
+								.trim(), "UTF-8");
+
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
+
+			try {
+				HttpClient client = new DefaultHttpClient();
+				HttpGet request = new HttpGet(
+						"http://178.62.43.79/cgiapp/api/register.php?"
+								+ restUrl); // replace
+				Log.e("Name : ", "Name : " + restUrl);
+
+				try {
+					response = client.execute(request);
+					HttpEntity entity = response.getEntity();
+
+					is = entity.getContent();
+
+					try {
+						BufferedReader reader = new BufferedReader(
+								new InputStreamReader(is, "iso-8859-1"), 8);
+						StringBuilder sb = new StringBuilder();
+						String line = null;
+						while ((line = reader.readLine()) != null) {
+							sb.append(line + "\n");
+						}
+						is.close();
+						json = sb.toString();
+
+					} catch (Exception e) {
+						Log.e("Buffer Error",
+								"Error converting result " + e.toString());
+					}
+
+					Log.e("DATA: ", "PARSING DATA " + json);
+
+					// Toast.LENGTH_LONG).show();
+				} catch (ClientProtocolException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} catch (NullPointerException e) {
+				// TODO: handle exception
+			}
+
+			return null;
+		}
+
+		@SuppressLint("NewApi")
+		@Override
+		protected void onPostExecute(Void result) {
+			super.onPostExecute(result);
+			Log.e("Json : ", json);
+
+			if (json.startsWith("Succsesfull")) {
+
+				Toast.makeText(getApplicationContext(),
+						"Registered Successfully", Toast.LENGTH_LONG).show();
+				r1.removeAllViews();
+				rl = (ViewGroup) getLayoutInflater().inflate(
+						R.layout.message_from_cg_tab, null);
+
+				WebView message_consolate = (WebView) rl
+						.findViewById(R.id.message_of_cg);
+				message_consolate
+						.loadUrl("file:///android_asset/cgihtml/welcome.html");
+
+				r1.addView(rl);
+			} else {
+				Toast.makeText(getApplicationContext(), json, Toast.LENGTH_LONG)
+						.show();
+			}
+			mProgressDialog.dismiss();
+
+		}
+	}
+
+	private DatePickerDialog.OnDateSetListener mDateSetListener = new DatePickerDialog.OnDateSetListener() {
+
+		public void onDateSet(DatePicker view, int year, int monthOfYear,
+				int dayOfMonth) {
+			mYear = year;
+			mMonth = monthOfYear;
+			mDay = dayOfMonth;
+
+			SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+			Date date1 = null;
+			Date date2 = null;
+			String date1s = sdf.format(c.getTime());
+			try {
+				date1 = sdf.parse(date1s);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			String str2 = Integer.toString(mDay) + "/"
+					+ Integer.toString(mMonth + 1) + "/"
+					+ Integer.toString(mYear);
+			try {
+				date2 = sdf.parse(str2);
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+			if (date1.compareTo(date2) < 0) {
+				Toast.makeText(getApplicationContext(),
+						"Future date is not allowed", Toast.LENGTH_SHORT)
+						.show();
+			} else {
+				editdob.setText(new StringBuilder().append(mDay).append("/")
+						.append(mMonth + 1).append("/").append(mYear));
+			}
+
+		}
+
+	};
+
+	protected Dialog onCreateDialog(int id) {
+		switch (id) {
+		case DATE_DIALOG_ID:
+			DatePickerDialog dialog = new DatePickerDialog(this,
+					mDateSetListener, mYear, mMonth, mDay);
+
+			return dialog;
+
+		}
+
+		return null;
+
+	}
+
+	public void showAlertDialog(Context context, String title, String message,
+			Boolean status) {
+		AlertDialog alertDialog = new AlertDialog.Builder(context).create();
+
+		// Setting Dialog Title
+		alertDialog.setTitle(title);
+
+		// Setting Dialog Message
+		alertDialog.setMessage(message);
+
+		// Setting alert dialog icon
+
+		// Setting OK Button
+		alertDialog.setButton("OK", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+			}
+		});
+
+		// Showing Alert Message
+		alertDialog.show();
+	}
+
+	private class MyBrowser extends WebViewClient {
+
+		@Override
+		public void onPageStarted(WebView view, String url, Bitmap favicon) {
+			// TODO Auto-generated method stub
+			super.onPageStarted(view, url, favicon);
+
+		}
+
+		@Override
+		public boolean shouldOverrideUrlLoading(WebView view, String url) {
+
+			Log.e("URLS", url);
+			// Toast.makeText(getApplicationContext(), url, Toast.LENGTH_LONG);
+			if (url.equalsIgnoreCase("file:///android_asset/cgihtml/register")) {
+
+				r1.removeAllViews();
+				rl = (ViewGroup) getLayoutInflater().inflate(
+						R.layout.registration_tab, null);
+				editname = (EditText) rl.findViewById(R.id.fullname);
+				editdob = (EditText) rl.findViewById(R.id.dob);
+				editnationality = (EditText) rl.findViewById(R.id.nationality);
+				editpassportnum = (EditText) rl.findViewById(R.id.passport);
+				editemail = (EditText) rl.findViewById(R.id.email);
+
+				subitimage = (ImageView) rl
+						.findViewById(R.id.download_form_button);
+				c = Calendar.getInstance();
+				mYear = c.get(Calendar.YEAR);
+				mMonth = c.get(Calendar.MONTH);
+				mDay = c.get(Calendar.DAY_OF_MONTH);
+
+				SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+				String asa = sdf.format(c.getTime());
+				dcheck = asa.substring(0, 2);
+
+				mcheck = asa.substring(3, 5);
+
+				ycheck = asa.substring(6);
+
+				editdob.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View v) {
+						// TODO Auto-generated method stub
+						showDialog(DATE_DIALOG_ID);
+
+					}
+				});
+				subitimage.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View v) {
+						// TODO Auto-generated method stub
+
+						cd = new ConnectionDetector(getApplicationContext());
+						// get Internet status
+						isInternetPresent = cd.isConnectingToInternet();
+
+						if (isInternetPresent) {
+
+							if (editname.getText().toString().trim().equals("")
+									|| editdob.getText().toString().trim()
+											.equals("")
+									|| editnationality.getText().toString()
+											.trim().equals("")
+									|| editpassportnum.getText().toString()
+											.trim().equals("")
+									|| editemail.getText().toString().trim()
+											.equals("")) {
+								Toast.makeText(getApplicationContext(),
+										"Please fill all details properly",
+										Toast.LENGTH_SHORT).show();
+
+							} else {
+
+								emailPattern = emailPattern(editemail.getText()
+										.toString());
+
+								if (emailPattern) {
+									Obj_Registrationasyn = new Registrationasyn();
+									Obj_Registrationasyn.execute();
+
+								} else {
+									Toast.makeText(getApplicationContext(),
+											"Please Enter Valid Email",
+											Toast.LENGTH_SHORT).show();
+
+								}
+
+							}
+
+						}
+
+						else {
+
+							Toast.makeText(getApplicationContext(),
+									"Please Check Your Internet Connection",
+									Toast.LENGTH_SHORT).show();
+
+						}
+
+					}
+				});
+				sos = (ImageButton) rl.findViewById(R.id.imageButton1);
+				sos.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View v) {
+						// TODO Auto-generated method stub
+						call1("0097180046342");
+					}
+				});
+				r1.addView(rl);
+			}
+
+			return true;
+
+		}
+
+	}
+
+	public static boolean emailPattern(String email) {
+		boolean isValid = false;
+
+		String expression = "^[\\w\\.-]+@([\\w\\-]+\\.)+[A-Z]{2,4}$";
+		CharSequence inputStr = email;
+
+		Pattern pattern = Pattern.compile(expression, Pattern.CASE_INSENSITIVE);
+		Matcher matcher = pattern.matcher(inputStr);
+		if (matcher.matches()) {
+			isValid = true;
+		}
+		return isValid;
+	}
+
+	public void Is_Valid_Passport(EditText edt) throws NumberFormatException {
+		if (edt.getText().toString().length() <= 0) {
+			validName = null;
+		} else if (!edt.getText().toString().matches("[a-zA-Z1234567890]+")) {
+			// edt.setError("Accept Alphabets Only.");
+			edt.setHint("PASSPORT NO");
+			edt.setText("");
+			edt.setHintTextColor(Color.parseColor("#ff0000"));
+			validName = null;
+		} else {
+			validName = edt.getText().toString();
+			edt.setError(null);
+
+		}
+
+	}
+
+	public void Is_Valid_Middle_Name(EditText edt) throws NumberFormatException {
+		if (edt.getText().toString().length() <= 0) {
+			validName = null;
+		} else if (!edt.getText().toString().matches("[a-zA-Z-_]+")) {
+			// edt.setError("Accept Alphabets Only.");
+			edt.setHint("NATIONALITY");
+			edt.setText("");
+			edt.setHintTextColor(Color.parseColor("#ff0000"));
+			validName = null;
+		} else {
+			validName = edt.getText().toString();
+			edt.setError(null);
+
+		}
+
+	}
+
+	// String specialChars = "/*!@#$%^&*()\"{}_[]|\\?/<>,.";
+	public void Is_Valid_First_Name(EditText edt) throws NumberFormatException {
+		if (edt.getText().toString().length() <= 0) {
+			validName = null;
+		} else if (!edt.getText().toString().matches("[a-zA-Z. ]+")) {
+			// edt.setError("Accept Alphabets Only.");
+			edt.setHint("NAME");
+			edt.setText("");
+			edt.setHintTextColor(Color.parseColor("#ff0000"));
+			validName = null;
+		} else {
+			validName = edt.getText().toString();
+			edt.setError(null);
+
+		}
+
+	}
+
+	class Griviencesasync extends AsyncTask<Void, Integer, Void> {
+
+		@Override
+		protected void onPreExecute() {
+			mProgressDialog = new ProgressDialog(MainActivity.this);
+			mProgressDialog.setTitle("Loading...");
+			mProgressDialog.show();
+
+		}
+
+		@Override
+		protected Void doInBackground(Void... params) {
+			try {
+				restUrl = "name="
+						+ URLEncoder.encode(gr_editname.getText().toString()
+								.trim(), "UTF-8")
+						+ "&text="
+						+ URLEncoder.encode(
+								gr_text.getText().toString().trim(), "UTF-8")
+						+ "&mobile="
+						+ URLEncoder.encode(gr_editmoblenumber.getText()
+								.toString().trim(), "UTF-8")
+						+ "&subject="
+						+ URLEncoder.encode(gr_selecttext.getText().toString()
+								.trim(), "UTF-8")
+						+ "&passport_no="
+						+ URLEncoder.encode(gr_editpassportnum.getText()
+								.toString().trim(), "UTF-8")
+						+ "&email="
+						+ URLEncoder.encode(gr_editemail.getText().toString()
+								.trim(), "UTF-8");
+
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
+
+			try {
+				HttpClient client = new DefaultHttpClient();
+				HttpGet request = new HttpGet(
+						"http://apps.eadaapps.com/cgi_dubai/api/register.php?"
+								+ restUrl); // replace
+				Log.e("Name : ", "Name : " + restUrl);
+
+				try {
+					response = client.execute(request);
+					HttpEntity entity = response.getEntity();
+
+					is = entity.getContent();
+
+					try {
+						BufferedReader reader = new BufferedReader(
+								new InputStreamReader(is, "iso-8859-1"), 8);
+						StringBuilder sb = new StringBuilder();
+						String line = null;
+						while ((line = reader.readLine()) != null) {
+							sb.append(line + "\n");
+						}
+						is.close();
+						json = sb.toString();
+
+					} catch (Exception e) {
+						Log.e("Buffer Error",
+								"Error converting result " + e.toString());
+					}
+
+					Log.e("DATA: ", "PARSING DATA " + json);
+
+					// Toast.LENGTH_LONG).show();
+				} catch (ClientProtocolException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} catch (NullPointerException e) {
+				// TODO: handle exception
+			}
+
+			return null;
+		}
+
+		@SuppressLint("NewApi")
+		@Override
+		protected void onPostExecute(Void result) {
+			super.onPostExecute(result);
+			Log.e("Json : ", json);
+			if (json.startsWith("Succsesfull")) {
+
+				Toast.makeText(getApplicationContext(),
+						"Recieved Successfully", Toast.LENGTH_LONG).show();
+				r1.removeAllViews();
+				rl = (ViewGroup) getLayoutInflater().inflate(
+						R.layout.griviencereadressable, null);
+				call_iwrc = (ImageView) rl.findViewById(R.id.call_iwcr_button);
+
+				WebView Grievanceredressal = (WebView) rl
+						.findViewById(R.id.Grievanceredressalweb);
+
+				Grievanceredressal
+						.loadUrl("file:///android_asset/labour/grievanceredressal.html");
+				sos = (ImageButton) rl.findViewById(R.id.imageButton1);
+				sos.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View v) {
+						// TODO Auto-generated method
+						// stub
+						call1("0097180046342");
+					}
+				});
+
+				call_iwrc.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View v) {
+						// TODO Auto-generated
+						// method stub
+						call1("80046342");
+					}
+				});
+				ImageView grievience_report = (ImageView) rl
+						.findViewById(R.id.Report_Grievance_button);
+				grievience_report.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View v) {
+						// TODO Auto-generated
+						// method stub
+						r1.removeAllViews();
+						rl = (ViewGroup) getLayoutInflater().inflate(
+								R.layout.grievience_report, null);
+						ImageView submit_gr = (ImageView) rl
+								.findViewById(R.id.gr_sumit_button);
+						gr_editname = (EditText) rl.findViewById(R.id.gr_name);
+						gr_editmoblenumber = (EditText) rl
+								.findViewById(R.id.gr_mobile_number);
+
+						gr_editpassportnum = (EditText) rl
+								.findViewById(R.id.gr_passport);
+
+						gr_editemail = (EditText) rl
+								.findViewById(R.id.gr_email);
+						gr_text = (EditText) rl.findViewById(R.id.gr_text);
+						gr_selecttext = (TextView) rl
+								.findViewById(R.id.GR_SELECT_SUBJECT);
+						gr_selecttext.setOnClickListener(new OnClickListener() {
+
+							@Override
+							public void onClick(View v) {
+								// TODO
+								// Auto-generated
+								// method
+								// stub
+								// View
+								// view
+								// =
+								// View.inflate(M,
+								// R.layout.titlebackgroungcolor,
+								// null);
+								// AlertDialog.Builder
+								// builder3
+								// = new
+								// AlertDialog.Builder(
+								// MainActivity.this);
+								// MainActivity.this
+								// .getWindow()
+								// .setBackgroundDrawableResource(
+								// Color.parseColor("#fd5804"));
+								// builder3.setTitle(
+								// "Select Subject")
+								// .setItems(
+								// SelectSubject,
+								// new
+								// DialogInterface.OnClickListener()
+								// {
+								// @Override
+								// public
+								// void
+								// onClick(
+								// DialogInterface
+								// dialog,
+								// int
+								// which)
+								// {
+								// //
+								// TODO
+								// //
+								// Auto-generated
+								// //
+								// method
+								// //
+								// stub
+								// gr_selecttext
+								// .setText(SelectSubject[which]);
+								// //
+								// Toast.makeText(
+								// //
+								// getApplicationContext(),
+								// //
+								// "U clicked "
+								// // +
+								// //
+								// SelectSubject[which],
+								// //
+								// Toast.LENGTH_LONG)
+								// //
+								// .show();
+								// }
+								// });
+								// builder3.show();
+								dialog = new Dialog(MainActivity.this);
+								dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+								LayoutInflater li = (LayoutInflater) MainActivity.this
+										.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+								View vas = li.inflate(
+										R.layout.titlebackgroungcolor, null,
+										false);
+								dialog.setContentView(vas);
+								dialog.setCancelable(false);
+								// there
+								// are a
+								// lot
+								// of
+								// settings,
+								// for
+								// dialog,
+								// check
+								// them
+								// all
+								// out!
+								ImageView closebut = (ImageView) dialog
+										.findViewById(R.id.closebutton);
+								closebut.setOnClickListener(new OnClickListener() {
+
+									@Override
+									public void onClick(View v) {
+										// TODO
+										// Auto-generated
+										// method
+										// stub
+
+										dialog.dismiss();
+
+									}
+								});
+								ListView list1 = (ListView) dialog
+										.findViewById(R.id.listView1);
+								list1.setAdapter(new ArrayAdapter<String>(
+										MainActivity.this,
+										android.R.layout.simple_list_item_1,
+										val));
+								list1.setOnItemClickListener(new OnItemClickListener() {
+
+									@Override
+									public void onItemClick(
+											AdapterView<?> parent, View view,
+											int position, long id) {
+										// TODO
+										// Auto-generated
+										// method
+										// stub
+										gr_selecttext.setText(val[position]
+												.toString());
+										dialog.dismiss();
+									}
+								});
+
+								// now
+								// that
+								// the
+								// dialog
+								// is
+								// set
+								// up,
+								// it's
+								// time
+								// to
+								// show
+								// it
+								dialog.show();
+							}
+						});
+						submit_gr.setOnClickListener(new OnClickListener() {
+
+							@Override
+							public void onClick(View v) {
+								// TODO
+								// Auto-generated
+								// method
+								// stub
+								cd = new ConnectionDetector(
+										getApplicationContext());
+								// get
+								// Internet
+								// status
+								isInternetPresent = cd.isConnectingToInternet();
+
+								if (isInternetPresent) {
+
+									if (gr_editname.getText().toString().trim()
+											.equals("")
+											|| gr_editmoblenumber.getText()
+													.toString().trim()
+													.equals("")
+											|| gr_editemail.getText()
+													.toString().trim()
+													.equals("")
+											|| gr_editpassportnum.getText()
+													.toString().trim()
+													.equals("")
+											|| gr_selecttext.getText()
+													.toString().trim()
+													.equals("")
+											|| gr_text.getText().toString()
+													.trim().equals("")) {
+										Toast.makeText(
+												getApplicationContext(),
+												"Please fill all details properly",
+												Toast.LENGTH_SHORT).show();
+
+									} else {
+
+										emailPattern = emailPattern(gr_editemail
+												.getText().toString());
+
+										if (emailPattern) {
+											// Obj_Registrationasyn
+											// =
+											// new
+											// Registrationasyn();
+											// Obj_Registrationasyn
+											// .execute();
+
+										} else {
+											Toast.makeText(
+													getApplicationContext(),
+													"Please Enter Valid Email",
+													Toast.LENGTH_SHORT).show();
+
+										}
+
+									}
+
+								}
+
+								else {
+
+									Toast.makeText(
+											getApplicationContext(),
+											"Please Check Your Internet Connection",
+											Toast.LENGTH_SHORT).show();
+
+								}
+
+							}
+						});
+
+						gr_editname.addTextChangedListener(new TextWatcher() {
+
+							@Override
+							public void onTextChanged(CharSequence s,
+									int start, int before, int count) {
+								// TODO
+								// Auto-generated
+								// method
+								// stub
+								Is_Valid_First_Name(gr_editname);
+
+							}
+
+							@Override
+							public void beforeTextChanged(CharSequence s,
+									int start, int count, int after) {
+								// TODO
+								// Auto-generated
+								// method
+								// stub
+
+							}
+
+							@Override
+							public void afterTextChanged(Editable s) {
+								// TODO
+								// Auto-generated
+								// method
+								// stub
+								Is_Valid_First_Name(gr_editname);
+							}
+						});
+
+						gr_editpassportnum
+								.addTextChangedListener(new TextWatcher() {
+
+									@Override
+									public void onTextChanged(CharSequence s,
+											int start, int before, int count) {
+										// TODO
+										// Auto-generated
+										// method
+										// stub
+										Is_Valid_Passport(gr_editpassportnum);
+
+									}
+
+									@Override
+									public void beforeTextChanged(
+											CharSequence s, int start,
+											int count, int after) {
+										// TODO
+										// Auto-generated
+										// method
+										// stub
+
+									}
+
+									@Override
+									public void afterTextChanged(Editable s) {
+										// TODO
+										// Auto-generated
+										// method
+										// stub
+										Is_Valid_Passport(gr_editpassportnum);
+									}
+								});
+						sos = (ImageButton) rl.findViewById(R.id.imageButton1);
+						sos.setOnClickListener(new OnClickListener() {
+
+							@Override
+							public void onClick(View v) {
+								// TODO
+								// Auto-generated
+								// method
+								// stub
+								call1("0097180046342");
+							}
+						});
+						r1.addView(rl);
+
+					}
+				});
+				r1.addView(rl);
+
+				mProgressDialog.dismiss();
+
+			} else {
+				Toast.makeText(getApplicationContext(),
+						"Process not completed Please try again later",
+						Toast.LENGTH_SHORT).show();
+				mProgressDialog.dismiss();
+			}
+		}
+	}
+	  public String getRandomString(){
+          StringBuffer randStr = new StringBuffer();
+          for (int i = 0; i < RANDOM_STR_LENGTH; i++) {
+                int number = getRandomNumber();
+                char ch = _CHAR.charAt(number);
+                randStr.append(ch);
+          }
+          return randStr.toString();
+    }
+
+    private int getRandomNumber() {
+          int randomInt = 0;
+          randomInt = random.nextInt(_CHAR.length());
+          if (randomInt - 1 == -1) {
+                return randomInt;
+          } else {
+                return randomInt - 1;
+          }
+    }
+}
